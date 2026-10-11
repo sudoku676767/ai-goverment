@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skill-blackbox"
+version = "0.1.0"
+description = "黑匣子: a flight recorder for agent plugins and skills"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+blackbox = "blackbox.cli:main"
+
+[tool.setuptools]
+packages = ["blackbox"]
