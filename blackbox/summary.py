@@ -81,7 +81,16 @@ def request_facts(body: Any) -> dict[str, Any]:
     # anthropic `system`, responses `instructions`
     system_chars += _text_len(body.get("system")) + _text_len(body.get("instructions"))
 
+    tool_names: list[str] = []
+    for t in tools if isinstance(tools, list) else []:
+        if isinstance(t, dict):
+            fn = t.get("function") if isinstance(t.get("function"), dict) else {}
+            name = fn.get("name") or t.get("name")
+            if name:
+                tool_names.append(str(name))
+
     return {
+        "tool_names": tool_names,
         "model": body.get("model"),
         "stream": bool(body.get("stream")),
         "max_tokens": body.get("max_tokens")
@@ -224,6 +233,7 @@ def summarise(path: str | Path) -> dict[str, Any]:
             "turn": 1,
             "input_tokens": first.get("input_tokens"),
             "n_tools": first.get("n_tools"),
+            "tool_names": first.get("tool_names") or [],
             "system_chars": first.get("system_chars"),
             "tool_defs_chars": first.get("tool_defs_chars"),
             "conversation_chars": first.get("conversation_chars"),

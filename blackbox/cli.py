@@ -103,6 +103,21 @@ def cmd_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_compare(args: argparse.Namespace) -> int:
+    from .compare import compare_groups, render_json as cjson, render_text as ctext, resolve_log
+
+    try:
+        a = [resolve_log(x, args.log_dir) for x in args.a]
+        b = [resolve_log(x, args.log_dir) for x in args.vs]
+    except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    c = compare_groups(a, b)
+    label_a, _, label_b = args.labels.partition(",")
+    print(cjson(c) if args.json else ctext(c, label_a or "A", label_b or "B"))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="blackbox", description="黑匣子: record what an agent's API traffic actually did.")
     p.add_argument("--version", action="version", version=__version__)
@@ -128,6 +143,18 @@ def build_parser() -> argparse.ArgumentParser:
     ps.add_argument("log")
     ps.add_argument("--json", action="store_true")
     ps.set_defaults(func=cmd_summary)
+
+    pc = sub.add_parser(
+        "compare",
+        help="compare two groups of runs",
+        description="Example: blackbox compare base-1 base-2 base-3 --vs clever-1 clever-2 clever-3",
+    )
+    pc.add_argument("a", nargs="+", help="logs or session names of group A (e.g. the clean baseline)")
+    pc.add_argument("--vs", nargs="+", required=True, help="logs or session names of group B")
+    pc.add_argument("--labels", default="base,plugin", help="names for the two groups, comma separated")
+    pc.add_argument("--log-dir", default=os.environ.get("BLACKBOX_LOG_DIR", DEFAULT_LOG_DIR))
+    pc.add_argument("--json", action="store_true")
+    pc.set_defaults(func=cmd_compare)
     return p
 
 
