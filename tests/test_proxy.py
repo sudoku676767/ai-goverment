@@ -208,11 +208,12 @@ class ProxyTests(unittest.TestCase):
         self.assertFalse(verify_log(deleted)["ok"])
 
     def test_summary_counts_repeats(self):
-        self._post({"model": "m", "messages": []})
-        self._post({"model": "m", "stream": True, "messages": []})
+        tools = [{"type": "function", "function": {"name": "bash"}}]
+        self._post({"model": "m", "messages": [], "tools": tools})
+        self._post({"model": "m", "stream": True, "messages": [], "tools": tools})
         s = summarise(self.log)
-        t = s["totals"]
-        self.assertEqual(t["requests"], 2)
+        t = s["totals"]["agent"]
+        self.assertEqual(t["turns"], 2)
         self.assertEqual(t["input_tokens"], 170)
         self.assertEqual(t["tool_calls"], 3)
         self.assertEqual(t["repeated_identical_tool_calls"], 1)

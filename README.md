@@ -33,27 +33,43 @@ DEEPSEEK_BASE_URL=http://127.0.0.1:8787 npx @deepseek-ai/dsh web
 
 # 3. 用完后在代理终端按 Ctrl+C，会打印最终哈希，记下它
 
-# 4. 校验日志完整性
-python3 -m blackbox verify ~/.blackbox/logs/first-run.jsonl --expect-hash <最终哈希>
+# 4. 校验日志完整性（把哈希直接粘贴进去，不要带尖括号）
+python3 -m blackbox verify ~/.blackbox/logs/first-run.jsonl --expect-hash 63534e9b...
 
 # 5. 查看指标
 python3 -m blackbox summary ~/.blackbox/logs/first-run.jsonl
 ```
 
-示例输出：
+示例输出（结构取自第一次真实运行：dsh 桌面版让 DeepSeek-V4-Flash 创建并运行 hello.py）：
 
 ```
-#  path               status  in   out  cached  reason  tools                finish      ms
--  -----------------  ------  ---  ---  ------  ------  -------------------  ----------  ----
-1  /chat/completions  200     50   10   -       -       read_file,read_file  tool_calls  4.0
-2  /chat/completions  200     120  30   100     12      bash                 tool_calls  64.7
+#  kind    path               st   in    cache%  Δin   out  reason  tools  finish      ms      flags
+1  meta    /models            200  -     -       -     -    -       -      -           240.0
+2  meta    /models            200  -     -       -     -    -       -      -           240.0
+3  agent1  /chat/completions  200  7624  0.0     -     241  197     glob   tool_calls  5000.0
+4  aux     /chat/completions  200  199   0.0     -     64   64      -      length      5000.0  truncated,reasoning_only
+5  agent2  /chat/completions  200  7880  91.0    +256  80   0       write  tool_calls  5000.0
+6  agent3  /chat/completions  200  8014  89.4    +134  65   0       pwsh   tool_calls  5000.0
+7  agent4  /chat/completions  200  8094  88.6    +80   61   0       -      stop        5000.0
 
-totals
-  requests: 2
-  input_tokens: 170
-  ...
-  repeated_identical_tool_calls: 1
+prompt composition, agent turn 1 (7624 input tokens, by characters)
+  system prompt         ...
+  tool definitions      ...
+  conversation          ...
+
+flagged
+  #4 aux: truncated, reasoning_only, max_tokens=64
 ```
+
+怎么读：
+
+- **kind**：`agent` 是 agent 循环的一轮（请求里带了工具），`aux` 是 harness 顺手发的辅助请求（比如起会话标题），`meta` 是模型列表之类的非生成请求。三类分开统计。
+- **cache%**：这一轮输入里命中缓存的比例。
+- **Δin**：和上一轮 agent 相比，输入多了多少，能看出哪一步往上下文里塞了大量内容。
+- **prompt composition**：第一轮输入里系统提示、工具定义、对话内容各占多少字符，看清固定开销有多大。
+- **flags**：纯机械标记，不做好坏判断。`truncated` 是输出撞到长度上限，`reasoning_only` 是输出全花在思考上、没有正文也没有工具调用。
+
+`--json` 输出完整数据，方便自己写分析。
 
 也可以 `pip install -e .`，之后直接用 `blackbox` 命令。
 
