@@ -14,4 +14,4 @@ dependencies = []
 blackbox = "blackbox.cli:main"
 
 [tool.setuptools]
-packages = ["blackbox"]
+packages = ["blackbox", "govdoc"]
