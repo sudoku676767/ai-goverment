@@ -18,6 +18,7 @@ cd ai-goverment
 
 # 1. 准备原文：建议从学校官网、教育厅或政府网站下载 20 份以上公开的通知、报告、请示，
 #    另存为 .docx 或 .txt 放进一个文件夹（PDF 请先另存为 Word）。
+#    文件名以 sources / readme 开头的文件（如来源清单 sources.txt）会被跳过。
 #    eval/samples/ 里有 6 份虚构样例，可以先用来试跑。
 
 # 2. 只测规则引擎（不需要 key，几秒钟）
@@ -50,7 +51,8 @@ python3 -m blackbox summary ~/.blackbox/logs/eval-run.jsonl
 | --- | --- | --- |
 | `--model` | `deepseek-flash`（或环境变量 `DEEPSEEK_MODEL`） | 官方 API 中 V4.1-Flash 的模型名，以 DeepSeek 文档为准 |
 | `--base-url` | `https://api.deepseek.com` | 换成本地部署地址或黑匣子代理 |
-| `--workers` | 4 | 并发数 |
+| `--workers` | 4 | 并发数（深度推理单次约 1 分钟以上，可开到 12） |
+| `--timeout` | 300 | 单次调用超时秒数 |
 | `--price-in` / `--price-out` / `--price-cached` | 1 / 4 / 0.02 | 元每百万 token，默认官方闲时价；高峰期用 2 / 8 / 0.04 |
 
 ## 写进材料时要注意

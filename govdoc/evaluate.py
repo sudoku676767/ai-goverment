@@ -21,7 +21,7 @@ import re
 import sys
 import time
 import zipfile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from statistics import mean, median
 
@@ -65,7 +65,7 @@ def run_one(text: str, genre: str, args) -> dict:
     rule_ms = (time.perf_counter() - t0) * 1000
     m_issues, stats = [], {}
     if not args.no_llm:
-        m_issues, stats = llm.check(text, genre, api_key=args.api_key, base_url=args.base_url, model=args.model)
+        m_issues, stats = llm.check(text, genre, api_key=args.api_key, base_url=args.base_url, model=args.model, timeout=args.timeout)
     return {"rule": r_issues, "model": m_issues, "rule_ms": rule_ms, "llm": stats}
 
 
@@ -77,6 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--base-url", default=llm.DEFAULT_BASE_URL, help="API base, or the blackbox proxy http://127.0.0.1:8787")
     ap.add_argument("--model", default=llm.DEFAULT_MODEL)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--timeout", type=float, default=300.0, help="单次模型调用超时（秒），深度推理较慢")
     ap.add_argument("--price-in", type=float, default=1.0, help="元 / 百万输入 token（官方闲时价）")
     ap.add_argument("--price-out", type=float, default=4.0, help="元 / 百万输出 token")
     ap.add_argument("--price-cached", type=float, default=0.02, help="元 / 百万缓存命中 token")
@@ -86,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         print("缺少 DEEPSEEK_API_KEY 环境变量；只测规则引擎请加 --no-llm", file=sys.stderr)
         return 2
 
-    paths = sorted(p for p in Path(args.docs).iterdir() if p.suffix.lower() in {".txt", ".md", ".docx"})
+    paths = sorted(p for p in Path(args.docs).iterdir() if p.suffix.lower() in {".txt", ".md", ".docx"} and not p.stem.lower().startswith(("sources", "readme")))
     if not paths:
         print(f"{args.docs} 里没有 .txt / .md / .docx 文件", file=sys.stderr)
         return 2
@@ -110,11 +111,14 @@ def main(argv: list[str] | None = None) -> int:
     results = []
     done = 0
     with ThreadPoolExecutor(max_workers=1 if args.no_llm else args.workers) as pool:
-        for job, res, err in pool.map(work, jobs):
+        futures = {pool.submit(work, job): i for i, job in enumerate(jobs)}
+        for fut in as_completed(futures):
+            job, res, err = fut.result()
             done += 1
             print(f"\r{done}/{len(jobs)}", end="", file=sys.stderr)
-            results.append((job, res, err))
+            results.append((futures[fut], job, res, err))
     print(file=sys.stderr)
+    results = [r[1:] for r in sorted(results, key=lambda r: r[0])]  # keep input order
 
     report = summarise(results, args)
     out = Path(args.out)
