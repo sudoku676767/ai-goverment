@@ -342,17 +342,17 @@ table.audit tr.new{animation:flash 2s}
 
     <!-- 评测 -->
     <section class="page" id="p-metrics">
-      <div class="toolbar"><h1>评测看板<span class="sub">由审计数据自动汇总，AI 提效从感觉变成数字</span></h1><div class="spacer"></div><span class="demo-flag">示例数据 · 待替换为试点实测</span></div>
+      <div class="toolbar"><h1>评测看板<span class="sub">埋错测评：每份公文埋入一处已知错误，看能否查出</span></h1><div class="spacer"></div><span class="demo-flag" id="metFlag"></span></div>
       <div class="kpis" id="metKpis"></div>
       <div class="row" style="flex:1">
-        <div class="card" style="flex:1"><h3 style="margin:0">各类问题的人工采纳率<span class="note" style="font-weight:400;margin-left:10px">采纳条数 ÷ AI 提示条数，越低说明误报越多</span></h3><div class="bars" id="barsType"></div></div>
-        <div class="card" style="flex:1"><h3 style="margin:0">各单位模型调用成本（本月）<span class="note" style="font-weight:400;margin-left:10px">按官方闲时价：输入 ¥1、输出 ¥4 / 百万 token</span></h3><div class="bars" id="barsDept"></div></div>
+        <div class="card" style="flex:1"><h3 style="margin:0">各类错误的检出率<span class="note" style="font-weight:400;margin-left:10px">规则引擎查格式标点，大模型查错别字和用语</span></h3><div class="bars" id="barsType"></div></div>
+        <div class="card" style="flex:1"><h3 style="margin:0">真实原文上的发现<span class="note" style="font-weight:400;margin-left:10px">未埋错的原文，人工抽查模型提示</span></h3><div id="realFind"></div></div>
       </div>
       <div class="card" style="padding:14px 20px" id="liveStat"></div>
     </section>
 
     <div id="toast"></div>
-    <div class="hint">演示原型 · 所有数据均为虚构 · 数字键 1–9、0 切换页面</div>
+    <div class="hint">演示原型 · 演示用公文与人员均为虚构，评测页为公开样本实测 · 数字键 1–9、0 切换页面</div>
   </main>
 </div>
 
@@ -686,12 +686,19 @@ $('#acOpen').onclick=()=>{$('#denyA').classList.add('on');addAudit('access_denie
 $('#denyClose').onclick=()=>$('#denyA').classList.remove('on');
 
 /* ---------- 评测 ---------- */
+/* 实测数据：基于公开公文样本的测评（govdoc.evaluate，2026-11-03） */
+const M={docs:26,seeded:142,caught:142,modelName:'DeepSeek-V4.1-Flash',date:'2026-11-03',
+  secs:36,chars:2070,costPer:0.026,dropped:5,perDoc:3.5,
+  types:[['发文字号括号（规则）',24,24],['标题末尾标点（规则）',14,14],['半角标点（规则）',36,36],['缺少成文日期（规则）',21,21],['错别字（模型）',25,25],['文种用语不当（模型）',22,22]],
+  sample:{n:15,real:10,wrong:4,unsure:1},
+  finds:[['三权鼎立','三权分立','教育部官网正文'],['防治减灾日','防灾减灾日','教育部答复函'],['截止到2025年12月31日','截至','高校通知'],['以上请示妥否，请示。','妥否，请批示','镇政府请示']]};
 function renderMetrics(){
-  $('#metKpis').innerHTML=`<div class="kpi"><span>本月校核公文</span><b>128 篇</b><small>示例值</small></div><div class="kpi"><span>AI 提示问题</span><b>1,046 条</b><small>示例值</small></div><div class="kpi"><span>总体采纳率</span><b>86%</b><small>示例值</small></div><div class="kpi"><span>单篇平均耗时（AI 初筛 + 人工终审）</span><b>6.5 分钟</b><small>示例值 · 人工基线待实测</small></div><div class="kpi"><span>单篇平均模型成本</span><b>¥0.012</b><small>示例值</small></div>`;
-  const T=[['格式（规则）',97],['标点（规则）',94],['错别字（模型）',88],['规范表述（模型）',76],['政策口径（知识库）',71]];
-  const D=[['学校办公室',0.62],['教务处',0.41],['学工处',0.33],['后勤处',0.19],['财务处',0.15]];
-  $('#barsType').innerHTML=T.map(([n,v])=>`<div class="bar"><span>${n}</span><div class="track"><div class="fill" data-w="${v}"></div></div><b>${v}%</b></div>`).join('');
-  $('#barsDept').innerHTML=D.map(([n,v])=>`<div class="bar"><span>${n}</span><div class="track"><div class="fill" style="background:#2f855a" data-w="${v/0.62*100}"></div></div><b>¥${v.toFixed(2)}</b></div>`).join('');
+  $('#metFlag').textContent=`基于 ${M.docs} 份公开公文样本的测评 · ${M.date} · ${M.modelName}`;
+  $('#metKpis').innerHTML=`<div class="kpi"><span>测评样本</span><b>${M.docs} 份</b><small>教育部、高校、区镇政府公开公文</small></div><div class="kpi"><span>埋入错误检出</span><b>${M.caught}/${M.seeded}</b><small>规则 + 大模型双通道</small></div><div class="kpi"><span>单篇 AI 初筛耗时</span><b>约 ${M.secs} 秒</b><small>平均每篇 ${M.chars.toLocaleString()} 字</small></div><div class="kpi"><span>单篇模型成本</span><b>¥${M.costPer.toFixed(3)}</b><small>按官方闲时价折算</small></div><div class="kpi"><span>幻觉拦截</span><b>${M.dropped} 次</b><small>引用原文不存在的句子，自动丢弃</small></div>`;
+  $('#barsType').innerHTML=M.types.map(([n,c,t])=>`<div class="bar"><span>${n}</span><div class="track"><div class="fill" data-w="${c/t*100}"></div></div><b>${c}/${t}</b></div>`).join('');
+  $('#realFind').innerHTML=`<div style="font-size:22px;line-height:1.6;margin:14px 0 10px">模型平均每份提示 <b>${M.perDoc}</b> 条；抽查 ${M.sample.n} 条：<b style="color:#2f855a">真问题 ${M.sample.real}</b> · <b style="color:#b7791f">误报或风格 ${M.sample.wrong}</b> · 存疑 ${M.sample.unsure}</div>`+
+    M.finds.map(([w,r,src])=>`<div style="display:flex;gap:14px;align-items:center;font-size:21px;padding:9px 0;border-top:1px solid #e5e9f0"><span style="color:#c53030;text-decoration:line-through">${w}</span><span>→</span><b style="color:#2f855a">${r}</b><span class="note" style="margin-left:auto">${src}</span></div>`).join('')+
+    `<div class="note" style="margin-top:12px">仍有部分提示属风格偏好或误报，所以采用“AI 初筛、人工终审”：AI 只提建议，由人决定改不改。</div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('#p-metrics .fill').forEach(f=>f.style.width=f.dataset.w+'%')));
   const calls=audit.filter(r=>r.type==='model_call');const tin=calls.reduce((a,r)=>a+r.tin,0),tout=calls.reduce((a,r)=>a+r.tout,0);
   const rv=audit.filter(r=>r.type==='review');const ad=rv.filter(r=>r.detail.includes('采纳')).length;
