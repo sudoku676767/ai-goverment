@@ -647,7 +647,7 @@ const MIN=`<h3>一、会议基本情况</h3><p>时间：2026年11月3日下午�
 $('#minBtn').onclick=async()=>{$('#minBtn').classList.add('disabled');await typeInto($('#minOut'),MIN,8);addAudit('model_call','会议纪要 · 校长办公会（11月3日）',1600,540);$('#minBtn').classList.remove('disabled')};
 
 /* ---------- 脱敏 ---------- */
-const ORIG=`关于学生<span class="s-name" data-k="人名1">张小明</span>（身份证号 <span class="s-id" data-k="身份证号1">330106200501011234</span>，手机 <span class="s-phone" data-k="手机号1">13800138000</span>）宿舍违规用电的情况说明：经学工处<span class="s-name" data-k="人名2">王建国</span>老师（电话 <span class="s-tel" data-k="电话1">0571-88881234</span>）核实，该生住址为<span class="s-addr" data-k="地址1">西湖区文三路100号</span>，宿舍内使用大功率电器一件，已当场收缴。请提出处理意见。`;
+const ORIG=`关于学生<span class="s-name" data-k="人名1">张小明</span>（身份证号 <span class="s-id" data-k="身份证号1">330106200501011231</span>，手机 <span class="s-phone" data-k="手机号1">13800138000</span>）宿舍违规用电的情况说明：经学工处<span class="s-name" data-k="人名2">王建国</span>老师（电话 <span class="s-tel" data-k="电话1">0571-88881234</span>）核实，该生住址为<span class="s-addr" data-k="地址1">西湖区文三路100号</span>，宿舍内使用大功率电器一件，已当场收缴。请提出处理意见。`;
 $('#rdOrig').innerHTML=ORIG;
 function phHtml(){const d=document.createElement('div');d.innerHTML=ORIG;d.querySelectorAll('span[data-k]').forEach(s=>{s.outerHTML=`<span class="ph">【${s.dataset.k}】</span>`});return d.innerHTML}
 const MODEL_OUT=`处理意见：【人名1】在宿舍使用大功率电器，违反《学生宿舍管理规定》第八条。建议由学工处【人名2】老师对其进行约谈教育，通报所在学院，并在一周内复查宿舍用电情况。`;
@@ -657,7 +657,7 @@ $('#rd3').onclick=async()=>{
   const out=document.createElement('div');out.style.marginTop='16px';out.style.paddingTop='14px';out.style.borderTop='1px dashed var(--line)';$('#rdModel').appendChild(out);
   await typeInto(out,MODEL_OUT.replace(/【(.+?)】/g,'<span class="ph">【$1】</span>'),14);
   addAudit('model_call','学工处理意见 · 输入已脱敏',900,120);
-  const ids=[['身份证号','330106200501011234'],['手机号','13800138000'],['电话','0571-88881234']];
+  const ids=[['身份证号','330106200501011231'],['手机号','13800138000'],['电话','0571-88881234']];
   const plain=ORIG.replace(/<[^>]+>/g,'');
   let red=plain;ids.forEach(([k,v])=>{red=red.replace(v,`<span class="r">[REDACTED:${k}:${sha256(v).slice(0,8)}]</span>`)});
   red=red.replace('张小明','<span class="r">[REDACTED:人名:'+sha256('张小明').slice(0,8)+']</span>').replace('王建国','<span class="r">[REDACTED:人名:'+sha256('王建国').slice(0,8)+']</span>').replace('西湖区文三路100号','<span class="r">[REDACTED:地址:'+sha256('西湖区文三路100号').slice(0,8)+']</span>');

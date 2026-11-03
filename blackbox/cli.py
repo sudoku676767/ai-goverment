@@ -118,6 +118,14 @@ def cmd_compare(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_redact(args: argparse.Namespace) -> int:
+    from .redact import redact_text
+
+    text = " ".join(args.text) if args.text else sys.stdin.read()
+    print(redact_text(text))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="blackbox", description="黑匣子: record what an agent's API traffic actually did.")
     p.add_argument("--version", action="version", version=__version__)
@@ -155,6 +163,10 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--log-dir", default=os.environ.get("BLACKBOX_LOG_DIR", DEFAULT_LOG_DIR))
     pc.add_argument("--json", action="store_true")
     pc.set_defaults(func=cmd_compare)
+
+    pr = sub.add_parser("redact", help="show what a text looks like after log redaction")
+    pr.add_argument("text", nargs="*", help="text to redact (default: read stdin)")
+    pr.set_defaults(func=cmd_redact)
     return p
 
 
