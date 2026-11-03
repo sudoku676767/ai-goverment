@@ -86,6 +86,9 @@ def main(argv: list[str] | None = None) -> int:
     if not args.no_llm and not args.api_key:
         print("缺少 DEEPSEEK_API_KEY 环境变量；只测规则引擎请加 --no-llm", file=sys.stderr)
         return 2
+    if not args.no_llm and not args.api_key.isascii():
+        print("DEEPSEEK_API_KEY 里有中文或全角字符，请换成真实的 key（sk- 开头）", file=sys.stderr)
+        return 2
 
     paths = sorted(p for p in Path(args.docs).iterdir() if p.suffix.lower() in {".txt", ".md", ".docx"} and not p.stem.lower().startswith(("sources", "readme")))
     if not paths:
