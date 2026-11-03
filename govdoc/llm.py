@@ -8,6 +8,7 @@ every call recorded in the audit log.
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import time
@@ -47,6 +48,10 @@ def _post_once(base_url: str, api_key: str, payload: dict, timeout: float) -> di
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8")
+    except http.client.HTTPException as exc:  # IncompleteRead, RemoteDisconnected
+        err = LLMError(f"connection: {exc!r}")
+        err.retryable = True
+        raise err from exc
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", "replace")[:300]
         err = LLMError(f"HTTP {exc.code}: {body}")
