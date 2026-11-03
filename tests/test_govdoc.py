@@ -104,5 +104,40 @@ class ModelChannelTests(unittest.TestCase):
             self.assertIn("总体检出率", (Path(out) / "report.md").read_text(encoding="utf-8"))
 
 
+class _Flaky(BaseHTTPRequestHandler):
+    calls = 0
+
+    def do_POST(self) -> None:  # noqa: N802
+        self.rfile.read(int(self.headers["Content-Length"]))
+        type(self).calls += 1
+        if type(self).calls == 1:
+            self.send_response(503)
+            self.end_headers()
+            return
+        out = b"null" if type(self).calls == 2 else json.dumps(
+            {"choices": [{"message": {"content": '{"issues":[]}'}}], "usage": {}}
+        ).encode()
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(out)))
+        self.end_headers()
+        self.wfile.write(out)
+
+    def log_message(self, *args) -> None:
+        pass
+
+
+class RetryTests(unittest.TestCase):
+    def test_retries_503_and_null_body(self) -> None:
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _Flaky)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            url = f"http://127.0.0.1:{server.server_address[1]}"
+            data = llm._post(url, "x", {"model": "m"}, 5, delays=(0, 0, 0))
+            self.assertIn("choices", data)
+            self.assertEqual(_Flaky.calls, 3)
+        finally:
+            server.shutdown()
+
+
 if __name__ == "__main__":
     unittest.main()

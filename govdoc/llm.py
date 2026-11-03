@@ -34,7 +34,10 @@ class LLMError(RuntimeError):
     pass
 
 
-def _post(base_url: str, api_key: str, payload: dict, timeout: float) -> dict:
+RETRY_DELAYS = (5, 10, 20, 40)  # seconds; DeepSeek returns 503 / empty bodies under load
+
+
+def _post_once(base_url: str, api_key: str, payload: dict, timeout: float) -> dict:
     req = urllib.request.Request(
         base_url.rstrip("/") + "/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
@@ -43,10 +46,36 @@ def _post(base_url: str, api_key: str, payload: dict, timeout: float) -> dict:
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            raw = resp.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", "replace")[:300]
-        raise LLMError(f"HTTP {exc.code}: {body}") from exc
+        err = LLMError(f"HTTP {exc.code}: {body}")
+        err.retryable = exc.code == 429 or exc.code >= 500
+        raise err from exc
+    except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+        err = LLMError(f"network: {exc}")
+        err.retryable = True
+        raise err from exc
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = None
+    if not isinstance(data, dict):
+        err = LLMError(f"bad response body: {raw[:100]!r}")
+        err.retryable = True
+        raise err
+    return data
+
+
+def _post(base_url: str, api_key: str, payload: dict, timeout: float, delays=RETRY_DELAYS) -> dict:
+    for delay in (*delays, None):
+        try:
+            return _post_once(base_url, api_key, payload, timeout)
+        except LLMError as exc:
+            if delay is None or not getattr(exc, "retryable", False):
+                raise
+            time.sleep(delay)
+    raise AssertionError("unreachable")
 
 
 def check(
@@ -56,7 +85,7 @@ def check(
     api_key: str,
     base_url: str = DEFAULT_BASE_URL,
     model: str = DEFAULT_MODEL,
-    timeout: float = 120.0,
+    timeout: float = 300.0,
 ) -> tuple[list[Issue], dict]:
     """Return (issues, stats). stats has tokens, seconds and dropped count."""
     payload = {
