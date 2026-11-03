@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>政务公文智核 · 演示原型</title>
+<style>
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --ink:#1f2933; --quiet:#5b6775; --line:#d9dee5;
+  --nav:#17324d; --nav-ink:#c9d6e3; --accent:#1d5fa8; --accent-soft:#e3eefa;
+  --red:#c0262d; --red-soft:#fde8e8; --yellow:#b7791f; --yellow-soft:#fdf3d8;
+  --blue:#1d5fa8; --blue-soft:#e3eefa; --green:#2f855a; --green-soft:#e2f4ea;
+  --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0f1720;overflow:hidden;font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;color:var(--ink)}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:var(--bg);display:grid;grid-template-columns:240px 1fr;grid-template-rows:72px 1fr}
+header{grid-column:1/3;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:20px}
+.brand{font-size:26px;font-weight:700;letter-spacing:2px;color:var(--nav)}
+.brand small{font-size:15px;font-weight:400;color:var(--quiet);letter-spacing:1px;margin-left:14px}
+.spacer{flex:1}
+.badge{font-size:14px;padding:6px 12px;border-radius:16px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.badge.green{background:var(--green-soft);color:var(--green)}
+.user{font-size:15px;color:var(--quiet)}
+.user select{font-size:15px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+nav{background:var(--nav);padding:18px 0;display:flex;flex-direction:column;gap:2px}
+nav button{all:unset;cursor:pointer;color:var(--nav-ink);font-size:17px;padding:13px 28px;display:flex;gap:12px;align-items:center}
+nav button .k{font-size:12px;opacity:.55;width:14px}
+nav button.on{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 4px 0 0 #5aa2f0}
+nav .sep{height:1px;background:rgba(255,255,255,.12);margin:10px 20px}
+nav .navlabel{font-size:12px;color:#7f97ae;padding:8px 28px 4px;letter-spacing:1px}
+main{position:relative;overflow:hidden;padding:28px 32px}
+.page{display:none;height:100%}
+.page.on{display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:28px;font-weight:700}
+h1 .sub{font-size:16px;font-weight:400;color:var(--quiet);margin-left:14px}
+.row{display:flex;gap:20px;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 22px}
+.btn{all:unset;cursor:pointer;background:var(--accent);color:#fff;font-size:16px;padding:10px 20px;border-radius:7px;white-space:nowrap}
+.btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+.btn.red{background:var(--red)}
+.btn.green{background:var(--green)}
+.btn:disabled,.btn.disabled{opacity:.4;pointer-events:none}
+.btn.small{font-size:14px;padding:6px 14px}
+label.f{display:block;font-size:14px;color:var(--quiet);margin:12px 0 6px}
+input.f,textarea.f{width:100%;font:inherit;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:#fbfcfd;color:var(--ink)}
+textarea.f{resize:none;line-height:1.6}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg span{padding:8px 20px;font-size:16px;cursor:pointer;background:#fff}
+.seg span.on{background:var(--accent);color:#fff}
+.note{font-size:14px;color:var(--quiet);line-height:1.6}
+.toolbar{display:flex;align-items:center;gap:14px}
+.legend{display:flex;gap:16px;font-size:14px;color:var(--quiet);align-items:center}
+.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* paper */
+.paper{background:var(--paper);border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:44px 70px;font-family:"FangSong","STFangsong","FangSong_GB2312","Noto Serif CJK SC",serif;font-size:21px;line-height:1.85;overflow:auto}
+.paper .redhead{color:var(--red);font-family:"SimSun","Songti SC","Noto Serif CJK SC",serif;font-weight:700;font-size:44px;text-align:center;letter-spacing:6px;line-height:1.3}
+.paper .redline{border-top:3px solid var(--red);margin:14px 0 22px}
+.paper .docno{text-align:center}
+.paper .title{font-family:"SimSun","Songti SC","Noto Serif CJK SC",serif;font-weight:700;font-size:27px;text-align:center;margin:18px 0 18px;line-height:1.5}
+.paper p{margin:0;text-indent:2em}
+.paper p.noindent{text-indent:0}
+.paper p.h{font-family:"SimHei","Heiti SC","Noto Sans CJK SC",sans-serif}
+.paper p.sign,.paper p.date{text-align:right;text-indent:0;padding-right:2em}
+.paper p.sign{margin-top:28px}
+mark{background:none;color:inherit;cursor:pointer;border-radius:2px;padding:0 1px}
+mark.rule{background:var(--yellow-soft);border-bottom:3px solid var(--yellow)}
+mark.model{background:var(--red-soft);border-bottom:3px solid var(--red)}
+mark.kb{background:var(--blue-soft);border-bottom:3px solid var(--blue)}
+mark.missing{display:inline-block;min-width:7em;text-align:center;font-size:17px;font-family:sans-serif;color:var(--yellow)}
+mark.focus{outline:3px solid #222;outline-offset:2px}
+.fixed{background:var(--green-soft);border-radius:2px;transition:background 2s}
+.fixed.fade{background:transparent}
+
+/* issues */
+.issues{width:560px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.counter{display:flex;gap:10px}
+.counter div{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:center}
+.counter b{display:block;font-size:30px}
+.counter span{font-size:13px;color:var(--quiet)}
+.ilist{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px}
+.issue{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;transition:opacity .4s}
+.issue.rule{border-left-color:var(--yellow)}
+.issue.model{border-left-color:var(--red)}
+.issue.kb{border-left-color:var(--blue)}
+.issue.sel{box-shadow:0 0 0 2px var(--accent)}
+.issue.done{opacity:.45}
+.issue .top{display:flex;justify-content:space-between;font-size:14px;color:var(--quiet)}
+.issue .chg{font-size:18px;margin:6px 0}
+.issue .chg del{color:var(--red)}
+.issue .chg ins{color:var(--green);text-decoration:none;font-weight:600}
+.issue .why{font-size:14px;color:var(--quiet);line-height:1.5}
+.issue .act{display:flex;gap:10px;margin-top:8px}
+.issue .res{font-size:14px;font-weight:600;margin-top:6px}
+.tag{font-size:12px;padding:2px 8px;border-radius:10px;margin-left:6px}
+.tag.rule{background:var(--yellow-soft);color:var(--yellow)}
+.tag.model{background:var(--red-soft);color:var(--red)}
+.tag.kb{background:var(--blue-soft);color:var(--blue)}
+.progress{font-size:15px;color:var(--quiet);min-height:22px}
+
+/* split compare */
+.cmp{display:flex;flex-direction:column;gap:12px;width:620px;overflow:auto}
+.cmpitem{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;cursor:pointer}
+.cmpitem.sel{box-shadow:0 0 0 2px var(--accent)}
+.st{font-size:13px;padding:2px 10px;border-radius:10px;float:right}
+.st.bad{background:var(--red-soft);color:var(--red)}
+.st.ok{background:var(--green-soft);color:var(--green)}
+.src{font-size:20px;line-height:1.9;font-family:"FangSong","STFangsong","Noto Serif CJK SC",serif}
+.src .hl{background:#fff1a8}
+.src .diff{background:#ffd6a0;font-weight:700}
+.cite{display:inline-block;font-size:13px;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:0 6px;margin:0 3px;cursor:pointer;font-family:sans-serif;vertical-align:2px}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs span{padding:10px 22px;font-size:17px;cursor:pointer;color:var(--quiet);border-bottom:3px solid transparent}
+.tabs span.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* minutes */
+.raw{font-family:"Menlo","Consolas",monospace;font-size:16px;line-height:1.75;white-space:pre-wrap;color:#3d4752}
+.minutes h3{font-size:20px;margin:16px 0 8px;font-family:"SimHei","Heiti SC",sans-serif}
+.minutes p{margin:4px 0;font-size:18px;line-height:1.75;font-family:"FangSong","STFangsong","Noto Serif CJK SC",serif}
+table.t{border-collapse:collapse;width:100%;font-size:16px}
+table.t th,table.t td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+table.t th{background:#f4f6f9;font-weight:600}
+.tbd{color:var(--yellow);background:var(--yellow-soft);padding:0 6px;border-radius:3px;font-weight:600}
+
+/* redact */
+.col3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;flex:1;min-height:0}
+.col3 .card{display:flex;flex-direction:column;gap:10px;overflow:auto}
+.col3 h3{margin:0;font-size:18px}
+.col3 .body{font-size:18px;line-height:1.9}
+.s-name,.s-id,.s-phone,.s-tel,.s-addr{border-radius:3px;padding:0 3px}
+.on-detect .s-name,.on-detect .s-id,.on-detect .s-phone,.on-detect .s-tel,.on-detect .s-addr{background:#ffe0b2;outline:1px solid #f0a14a}
+.ph{background:#e3e7ff;color:#3442a8;border-radius:3px;padding:0 4px;font-weight:600}
+.logline{font-family:"Menlo","Consolas",monospace;font-size:14px;background:#111a24;color:#cfe3f5;border-radius:8px;padding:14px 16px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.logline .r{color:#ffb86b}
+.steps{display:flex;gap:10px}
+
+/* access */
+.pane{flex:1;display:flex;flex-direction:column;gap:12px;position:relative}
+.who{display:flex;align-items:center;gap:12px}
+.avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:19px}
+.funnel{font-size:15px;color:var(--quiet);background:#f6f8fa;border-radius:8px;padding:10px 14px;line-height:1.7}
+.doc-chip{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px 4px 2px 0;font-size:14px;background:#fff}
+.doc-chip.cut{text-decoration:line-through;color:#a0a8b2;background:#f3f4f6}
+.answer{font-size:18px;line-height:1.8;min-height:120px}
+.deny{position:absolute;inset:0;background:rgba(192,38,45,.94);color:#fff;border-radius:10px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:40px}
+.deny.on{display:flex}
+.deny b{font-size:34px}
+.deny div{font-size:19px;line-height:1.7}
+
+/* audit */
+.kpis{display:flex;gap:16px}
+.kpi{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.kpi span{font-size:14px;color:var(--quiet)}
+.kpi b{display:block;font-size:30px;margin-top:4px}
+.kpi small{font-size:13px;color:var(--quiet)}
+.auditwrap{flex:1;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px}
+table.audit{border-collapse:collapse;width:100%;font-size:15px}
+table.audit th{position:sticky;top:0;background:#f4f6f9;text-align:left;padding:10px;border-bottom:1px solid var(--line);font-weight:600}
+table.audit td{padding:9px 10px;border-bottom:1px solid #edf0f3;vertical-align:top}
+table.audit td.mono{font-family:"Menlo","Consolas",monospace;font-size:13px;color:#4a5562}
+table.audit tr.ok td:first-child{box-shadow:inset 4px 0 0 var(--green)}
+table.audit tr.bad{background:var(--red-soft)}
+table.audit tr.bad td:first-child{box-shadow:inset 4px 0 0 var(--red)}
+table.audit tr.unk{opacity:.45}
+table.audit tr.new{animation:flash 2s}
+@keyframes flash{from{background:#fff6c2}to{background:transparent}}
+.tampered{color:var(--red);font-style:italic;font-weight:600}
+.verdict{font-size:17px;font-weight:600;padding:10px 16px;border-radius:8px;display:none}
+.verdict.ok{display:block;background:var(--green-soft);color:var(--green)}
+.verdict.bad{display:block;background:var(--red-soft);color:var(--red)}
+.evt{font-size:13px;padding:2px 8px;border-radius:10px;background:#eef1f5;white-space:nowrap}
+.evt.model_call{background:var(--accent-soft);color:var(--accent)}
+.evt.review{background:var(--green-soft);color:var(--green)}
+.evt.access_denied{background:var(--red-soft);color:var(--red)}
+.evt.kb_search{background:#efe7fb;color:#6b3fb3}
+.evt.redact{background:#fff1dc;color:#a35b00}
+
+/* metrics */
+.demo-flag{font-size:14px;background:var(--yellow-soft);color:var(--yellow);padding:4px 12px;border-radius:14px;font-weight:600}
+.bars{display:flex;flex-direction:column;gap:30px;margin-top:34px}
+.bar{display:grid;grid-template-columns:190px 1fr 80px;align-items:center;gap:14px;font-size:18px}
+.bar .track{height:40px;background:#eef1f5;border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);width:0;transition:width 1.2s ease}
+.bar b{text-align:right}
+
+/* arch */
+.archwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.layer{transition:opacity .5s}
+.dim .layer{opacity:.22}
+.dim .layer.lit{opacity:1}
+
+/* toast */
+#toast{position:absolute;right:32px;bottom:28px;background:#111a24;color:#e6f0fa;border-radius:10px;padding:12px 18px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transform:translateY(10px);transition:all .35s;pointer-events:none;max-width:560px;line-height:1.5}
+#toast.on{opacity:1;transform:none}
+#toast .h{font-family:"Menlo","Consolas",monospace;color:#8fd3a8}
+.typing::after{content:"▍";animation:blink 1s steps(1) infinite;color:var(--accent)}
+@keyframes blink{50%{opacity:0}}
+.hint{position:absolute;left:32px;bottom:10px;font-size:12px;color:#9aa5b1}
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="brand">政务公文智核<small>AI 初筛 · 人工终审 · 全程可审计</small></div>
+    <div class="spacer"></div>
+    <span class="badge">模型：DeepSeek-V4.1-Flash-1017</span>
+    <span class="badge green">● 经黑匣子审计代理</span>
+    <span class="user">当前用户
+      <select id="userSel">
+        <option value="0">王老师 · 学校办公室</option>
+        <option value="1">李老师 · 教务处科员</option>
+        <option value="2">赵主任 · 学校办公室主任</option>
+      </select>
+    </span>
+  </header>
+  <nav id="nav"></nav>
+  <main>
+    <!-- 架构 -->
+    <section class="page" id="p-arch">
+      <div class="toolbar"><h1>系统架构<span class="sub">每一次模型调用都经过黑匣子审计底座</span></h1><div class="spacer"></div>
+        <button class="btn ghost" id="archSwap">切换模型（演示可替换）</button>
+        <button class="btn ghost" id="archAll">全部显示</button>
+        <button class="btn" id="archNext">逐层展示 ▶</button></div>
+      <div class="archwrap"><svg id="archSvg" viewBox="0 0 1560 860" width="1560" height="860"></svg></div>
+    </section>
+
+    <!-- 起草 -->
+    <section class="page" id="p-draft">
+      <div class="toolbar"><h1>公文起草<span class="sub">填要素，生成规范初稿</span></h1></div>
+      <div class="row" style="flex:1">
+        <div class="card" style="width:560px;overflow:auto">
+          <label class="f" style="margin-top:0">文种</label>
+          <div class="seg" id="kindSeg"><span class="on">通知</span><span>报告</span><span>请示</span></div>
+          <label class="f">发文单位</label><input class="f" value="示范学院办公室">
+          <label class="f">主送单位</label><input class="f" value="各学院、各部门">
+          <label class="f">事项</label><input class="f" value="召开2026年秋季学期教学工作会议">
+          <label class="f">时间 / 地点</label><input class="f" value="11月10日（星期二）14:30 · 行政楼第一会议室">
+          <label class="f">想说什么（口语即可）</label>
+          <textarea class="f" rows="5">下周二下午开个教学工作会，总结一下期中教学检查，布置期末考试，各学院院长和教学副院长都要来，来不了的找人代会，提前跟办公室报备。</textarea>
+          <div style="display:flex;gap:12px;margin-top:18px"><button class="btn" id="genBtn">生成初稿</button><button class="btn ghost disabled" id="toProof">送校核 →</button></div>
+          <p class="note" style="margin-top:16px">红头、发文字号、落款、成文日期由程序按要素和版式规则生成；正文由大模型按文种模板生成。</p>
+        </div>
+        <div class="paper" style="flex:1" id="draftPaper">
+          <div class="redhead">示范学院办公室文件</div>
+          <div class="docno" style="margin-top:20px">示院办〔2026〕21号</div>
+          <div class="redline"></div>
+          <div class="title">关于召开2026年秋季学期教学工作会议的通知</div>
+          <p class="noindent">各学院、各部门：</p>
+          <div id="draftBody"><p class="note" style="text-indent:0;font-family:sans-serif;margin-top:30px">点击“生成初稿”开始。</p></div>
+          <div id="draftTail" style="display:none"><p class="sign">示范学院办公室</p><p class="date">2026年11月3日</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 校核 -->
+    <section class="page" id="p-proof">
+      <div class="toolbar"><h1>公文校核<span class="sub">规则引擎 + 大模型双通道，AI 只出建议，人工终审</span></h1><div class="spacer"></div>
+        <div class="legend"><span><i class="dot" style="background:var(--yellow)"></i>规则引擎（格式）</span><span><i class="dot" style="background:var(--red)"></i>大模型（表述）</span><span><i class="dot" style="background:var(--blue)"></i>知识库（口径）</span></div></div>
+      <div class="toolbar"><span class="badge" style="background:#fff;border:1px solid var(--line);color:var(--ink)">📄 关于开展秋季学期安全检查工作的通知（待校核）.docx</span>
+        <button class="btn" id="proofBtn">开始校核</button><button class="btn green disabled" id="finalBtn">定稿并导出 Word</button><span class="progress" id="proofProg"></span></div>
+      <div class="row" style="flex:1">
+        <div class="paper" style="flex:1" id="proofPaper"></div>
+        <div class="issues">
+          <div class="counter"><div><b id="cTodo">–</b><span>待处理</span></div><div><b id="cAdopt">0</b><span>已采纳</span></div><div><b id="cReject">0</b><span>已驳回</span></div></div>
+          <div class="ilist" id="ilist"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 口径 -->
+    <section class="page" id="p-policy">
+      <div class="toolbar"><h1>政策口径比对与解读<span class="sub">每条结论附原文出处，查不到出处的不展示</span></h1></div>
+      <div class="tabs" id="polTabs"><span class="on" data-t="cmp">口径比对</span><span data-t="qa">政策问答</span></div>
+      <div class="row" style="flex:1" id="polCmp">
+        <div class="cmp" id="cmpList"></div>
+        <div class="card" style="flex:1;overflow:auto" id="cmpSrc"></div>
+      </div>
+      <div class="row" style="flex:1;display:none" id="polQa">
+        <div class="card" style="flex:1;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px"><input class="f" id="qaQ" value="开展校园安全检查，自查报告什么时候交？发现问题怎么处理？"><button class="btn" id="qaBtn">提问</button></div>
+          <div class="funnel" id="qaRetr" style="display:none"></div>
+          <div class="answer" id="qaA"></div>
+          <p class="note" id="qaNote" style="display:none">回答中的每条要点都附条款出处，点击可查看原文；知识库中检索不到出处的内容不会出现在回答里。</p>
+        </div>
+        <div class="card" style="width:640px;overflow:auto" id="qaSrc"><p class="note">点击回答中的出处标记查看原文。</p></div>
+      </div>
+    </section>
+
+    <!-- 纪要 -->
+    <section class="page" id="p-minutes">
+      <div class="toolbar"><h1>会议纪要与长文摘要<span class="sub">速记一键成纪要，原文找不到的信息标“待确认”</span></h1><div class="spacer"></div>
+        <div class="seg"><span class="on">会议纪要</span><span>长文摘要</span></div><button class="btn" id="minBtn">生成纪要</button></div>
+      <div class="row" style="flex:1">
+        <div class="card" style="width:640px;overflow:auto"><h3 style="margin:0 0 10px">会议速记（原始记录）</h3><div class="raw" id="rawNotes"></div></div>
+        <div class="card minutes" style="flex:1;overflow:auto" id="minOut"><p class="note">点击“生成纪要”。</p></div>
+      </div>
+    </section>
+
+    <!-- 脱敏 -->
+    <section class="page" id="p-redact">
+      <div class="toolbar"><h1>敏感信息保护<span class="sub">送模型前替换、写日志前遮蔽：可用不可见</span></h1><div class="spacer"></div>
+        <div class="steps"><button class="btn ghost" id="rd1">① 识别敏感信息</button><button class="btn ghost disabled" id="rd2">② 替换后送模型</button><button class="btn ghost disabled" id="rd3">③ 模型处理</button><button class="btn ghost disabled" id="rd4">④ 还原结果</button></div></div>
+      <div class="col3">
+        <div class="card"><h3>原文（仅在本机）</h3><div class="body" id="rdOrig"></div></div>
+        <div class="card"><h3>模型实际看到的</h3><div class="body" id="rdModel"><p class="note">等待第②步</p></div></div>
+        <div class="card"><h3>返回给用户的结果</h3><div class="body" id="rdOut"><p class="note">等待第④步</p></div></div>
+      </div>
+      <div class="card" style="padding:14px 18px"><div style="font-size:15px;color:var(--quiet);margin-bottom:8px">写入审计日志的内容（敏感信息已遮蔽，只保留哈希用于比对）</div><div class="logline" id="rdLog">—</div></div>
+    </section>
+
+    <!-- 权限 -->
+    <section class="page" id="p-access">
+      <div class="toolbar"><h1>分级访问控制<span class="sub">按角色与密级检索，越权可拦截、可追溯</span></h1></div>
+      <div class="toolbar"><input class="f" id="acQ" style="flex:1" value="2027 年度预算调整方案有哪些主要变化？"><button class="btn" id="acBtn">两人同时提问</button></div>
+      <div class="row" style="flex:1">
+        <div class="card pane" id="paneA">
+          <div class="who"><div class="avatar" style="background:#4a7fb5">李</div><div><b style="font-size:19px">李老师 · 教务处科员</b><div class="note">可访问密级：公开、本部门</div></div><div class="spacer"></div><button class="btn red small" id="acOpen">直接打开《2027年度预算调整方案》</button></div>
+          <div class="funnel" id="fA" style="display:none"></div>
+          <div class="answer" id="aA"></div>
+          <div class="deny" id="denyA"><b>⛔ 无权访问</b><div>《2027年度预算调整方案》密级为“内部”<br>您的权限为“公开、本部门”<br><br>本次访问已拦截，并写入审计记录</div><button class="btn ghost" style="background:#fff" id="denyClose">返回</button></div>
+        </div>
+        <div class="card pane">
+          <div class="who"><div class="avatar" style="background:#8a5a2b">赵</div><div><b style="font-size:19px">赵主任 · 学校办公室主任</b><div class="note">可访问密级：公开、内部</div></div></div>
+          <div class="funnel" id="fB" style="display:none"></div>
+          <div class="answer" id="aB"></div>
+        </div>
+      </div>
+      <p class="note" style="margin:0">先按权限过滤、再交给模型：无权文件根本不进入模型的输入，而不是让模型“不要说”。所有文件和内容均为虚构。</p>
+    </section>
+
+    <!-- 审计 -->
+    <section class="page" id="p-audit">
+      <div class="toolbar"><h1>审计记录<span class="sub">只追加 · 哈希链防篡改 · 成本计量</span></h1><div class="spacer"></div>
+        <button class="btn ghost" id="tamperBtn">模拟篡改一条记录</button><button class="btn ghost disabled" id="restoreBtn">恢复</button><button class="btn" id="verifyBtn">完整性校验</button></div>
+      <div class="kpis" id="auditKpis"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="auditwrap"><table class="audit"><thead><tr><th style="width:56px">#</th><th style="width:96px">时间</th><th style="width:200px">用户</th><th style="width:120px">事件</th><th>内容</th><th style="width:150px">token（入/出）</th><th style="width:90px">成本</th><th style="width:250px">本条哈希 ← 上一条</th></tr></thead><tbody id="auditBody"></tbody></table></div>
+    </section>
+
+    <!-- 评测 -->
+    <section class="page" id="p-metrics">
+      <div class="toolbar"><h1>评测看板<span class="sub">由审计数据自动汇总，AI 提效从感觉变成数字</span></h1><div class="spacer"></div><span class="demo-flag">示例数据 · 待替换为试点实测</span></div>
+      <div class="kpis" id="metKpis"></div>
+      <div class="row" style="flex:1">
+        <div class="card" style="flex:1"><h3 style="margin:0">各类问题的人工采纳率<span class="note" style="font-weight:400;margin-left:10px">采纳条数 ÷ AI 提示条数，越低说明误报越多</span></h3><div class="bars" id="barsType"></div></div>
+        <div class="card" style="flex:1"><h3 style="margin:0">各单位模型调用成本（本月）<span class="note" style="font-weight:400;margin-left:10px">按官方闲时价：输入 ¥1、输出 ¥4 / 百万 token</span></h3><div class="bars" id="barsDept"></div></div>
+      </div>
+      <div class="card" style="padding:14px 20px" id="liveStat"></div>
+    </section>
+
+    <div id="toast"></div>
+    <div class="hint">演示原型 · 所有数据均为虚构 · 数字键 1–9、0 切换页面</div>
+  </main>
+</div>
+
+<script>
+/* ---------- sha256 (pure JS, works on file://) ---------- */
+function sha256(str){
+  const rotr=(x,n)=>(x>>>n)|(x<<(32-n));
+  const K=[],H=[];let p=2,c=0;
+  const isPrime=n=>{for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true};
+  while(c<64){if(isPrime(p)){if(c<8)H[c]=(Math.pow(p,1/2)*4294967296)|0;K[c]=(Math.pow(p,1/3)*4294967296)|0;c++}p++}
+  const bytes=new TextEncoder().encode(str);const l=bytes.length;
+  const buf=new Uint8Array(((l+9+63)>>6)<<6);buf.set(bytes);buf[l]=0x80;
+  const dv=new DataView(buf.buffer);const bits=l*8;
+  dv.setUint32(buf.length-4,bits>>>0);dv.setUint32(buf.length-8,Math.floor(bits/4294967296));
+  const W=new Array(64);let h=H.slice();
+  for(let i=0;i<buf.length;i+=64){
+    for(let t=0;t<16;t++)W[t]=dv.getUint32(i+t*4);
+    for(let t=16;t<64;t++){const s0=rotr(W[t-15],7)^rotr(W[t-15],18)^(W[t-15]>>>3);const s1=rotr(W[t-2],17)^rotr(W[t-2],19)^(W[t-2]>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0}
+    let [a,b,cc,d,e,f,g,hh]=h;
+    for(let t=0;t<64;t++){const S1=rotr(e,6)^rotr(e,11)^rotr(e,25);const ch=(e&f)^(~e&g);const t1=(hh+S1+ch+K[t]+W[t])|0;const S0=rotr(a,2)^rotr(a,13)^rotr(a,22);const maj=(a&b)^(a&cc)^(b&cc);const t2=(S0+maj)|0;hh=g;g=f;f=e;e=(d+t1)|0;d=cc;cc=b;b=a;a=(t1+t2)|0}
+    h=[h[0]+a|0,h[1]+b|0,h[2]+cc|0,h[3]+d|0,h[4]+e|0,h[5]+f|0,h[6]+g|0,h[7]+hh|0];
+  }
+  return h.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const USERS=[{name:'王老师',dept:'学校办公室'},{name:'李老师',dept:'教务处'},{name:'赵主任',dept:'学校办公室'}];
+const PRICE_IN=1,PRICE_OUT=4; // 元 / 百万 token（官方闲时价）
+const cost=(i,o)=>(i*PRICE_IN+o*PRICE_OUT)/1e6;
+const yuan=v=>'¥'+v.toFixed(4);
+function curUser(){return USERS[+$('#userSel').value]}
+async function typeInto(el,html,speed=14){
+  // types plain text segments while keeping tags intact
+  el.innerHTML='';el.classList.add('typing');
+  const tmp=document.createElement('div');tmp.innerHTML=html;
+  async function walk(src,dst){
+    for(const n of Array.from(src.childNodes)){
+      if(n.nodeType===3){const tn=document.createTextNode('');dst.appendChild(tn);for(const ch of n.textContent){tn.textContent+=ch;if(ch.trim())await sleep(speed)}}
+      else{const c=n.cloneNode(false);dst.appendChild(c);await walk(n,c)}
+    }
+  }
+  await walk(tmp,el);el.classList.remove('typing');
+}
+
+/* ---------- stage scaling ---------- */
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);const st=$('#stage');st.style.transform=`scale(${s})`;st.style.left=((innerWidth-1920*s)/2)+'px';st.style.top=((innerHeight-1080*s)/2)+'px'}
+addEventListener('resize',fit);fit();
+
+/* ---------- nav ---------- */
+const PAGES=[['arch','系统架构'],['draft','公文起草'],['proof','公文校核'],['policy','口径比对与解读'],['minutes','会议纪要'],['redact','敏感信息保护'],['access','分级访问控制'],['audit','审计记录'],['metrics','评测看板']];
+function buildNav(){
+  const nav=$('#nav');nav.innerHTML='<div class="navlabel">智能体</div>';
+  PAGES.forEach(([id,name],i)=>{
+    if(id==='redact')nav.insertAdjacentHTML('beforeend','<div class="sep"></div><div class="navlabel">安全与审计</div>');
+    nav.insertAdjacentHTML('beforeend',`<button data-p="${id}"><span class="k">${(i+1)%10}</span>${name}</button>`)});
+  nav.onclick=e=>{const b=e.target.closest('button');if(b)go(b.dataset.p)};
+}
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===id));
+  if(id==='audit')renderAudit();
+  if(id==='metrics')renderMetrics();
+}
+addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;const n=e.key==='0'?9:+e.key;if(n>=1&&n<=PAGES.length)go(PAGES[n-1][0])});
+
+/* ---------- audit chain ---------- */
+const audit=[];let tamperIdx=-1,tamperOrig=null;
+function canon(r){return JSON.stringify({seq:r.seq,time:r.time,user:r.user,type:r.type,detail:r.detail,tin:r.tin,tout:r.tout,prev:r.prev})}
+function addAudit(type,detail,tin=0,tout=0,opts={}){
+  const u=opts.user||curUser();
+  const prev=audit.length?audit[audit.length-1].hash:'0'.repeat(64);
+  const d=opts.time||new Date();
+  const time=d.toTimeString().slice(0,8);
+  const r={seq:audit.length+1,time,user:`${u.name} · ${u.dept}`,type,detail,tin,tout,prev};
+  r.hash=sha256(canon(r));audit.push(r);
+  if(!opts.silent)toast(`已写入审计链 #${r.seq} · ${typeName(type)}<br><span class="h">${r.hash.slice(0,16)}… ← ${prev.slice(0,8)}…</span>`);
+  return r;
+}
+function typeName(t){return {model_call:'模型调用',kb_search:'知识库检索',review:'人工审核',access_denied:'越权拦截',redact:'脱敏',export:'定稿导出'}[t]||t}
+let toastT;function toast(h){const t=$('#toast');t.innerHTML=h;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+// seed: earlier records today
+(function seed(){
+  const base=new Date();base.setHours(8,42,10);
+  const s=[[1,'model_call','起草 ·《关于做好冬季校园消防工作的通知》',2730,588],[1,'review','校核 · 第2条“截至→截止” 采纳',0,0],[0,'kb_search','口径比对 · 检索《安全生产法》等 3 份文件',0,0],[0,'model_call','会议纪要 · 校长办公会（10月30日）',1610,522],[2,'model_call','政策问答 ·“学生资助政策申请时间”',3980,341]];
+  s.forEach(([ui,t,dd,i,o],k)=>{const d=new Date(base.getTime()+k*263000);addAudit(t,dd,i,o,{user:USERS[ui],time:d,silent:true})});
+})();
+function renderAudit(newSeq){
+  const calls=audit.filter(r=>r.type==='model_call');
+  const tin=calls.reduce((a,r)=>a+r.tin,0),tout=calls.reduce((a,r)=>a+r.tout,0);
+  $('#auditKpis').innerHTML=`<div class="kpi"><span>记录总数</span><b>${audit.length}</b></div><div class="kpi"><span>模型调用</span><b>${calls.length}</b></div><div class="kpi"><span>累计 token（入 / 出）</span><b>${tin.toLocaleString()} / ${tout.toLocaleString()}</b></div><div class="kpi"><span>累计成本</span><b>${yuan(cost(tin,tout))}</b><small>按官方闲时价折算</small></div><div class="kpi"><span>最新哈希</span><b style="font-family:Menlo,Consolas,monospace;font-size:20px;margin-top:10px">${audit[audit.length-1].hash.slice(0,16)}…</b></div>`;
+  $('#auditBody').innerHTML=audit.slice().reverse().map(r=>`<tr data-seq="${r.seq}" class="${r.seq===newSeq?'new':''}"><td>${r.seq}</td><td>${r.time}</td><td>${r.user}</td><td><span class="evt ${r.type}">${typeName(r.type)}</span></td><td class="${r.seq-1===tamperIdx?'tampered':''}">${r.detail}</td><td>${r.tin?r.tin.toLocaleString()+' / '+r.tout.toLocaleString():'—'}</td><td>${r.tin?yuan(cost(r.tin,r.tout)):'—'}</td><td class="mono">${r.hash.slice(0,12)}… ← ${r.prev.slice(0,8)}…</td></tr>`).join('');
+}
+$('#verifyBtn').onclick=async()=>{
+  const v=$('#verdict');v.className='verdict';$('#verifyBtn').classList.add('disabled');
+  document.querySelectorAll('#auditBody tr').forEach(tr=>tr.className='unk');
+  let prev='0'.repeat(64),bad=-1;
+  for(let i=0;i<audit.length;i++){
+    const r=audit[i];const tr=document.querySelector(`#auditBody tr[data-seq="${r.seq}"]`);
+    const ok=r.prev===prev&&sha256(canon(r))===r.hash;
+    await sleep(140);tr.className=ok?'ok':'bad';if(!ok)tr.scrollIntoView({block:'center',behavior:'smooth'});
+    if(!ok){bad=i;break}prev=r.hash;
+  }
+  if(bad<0){v.className='verdict ok';v.textContent=`✓ 哈希链完整：${audit.length} 条记录全部校验通过，最终哈希 ${audit[audit.length-1].hash.slice(0,16)}…`}
+  else{v.className='verdict bad';v.textContent=`✗ 第 ${bad+1} 条记录哈希不符：内容在写入后被修改。其后 ${audit.length-bad-1} 条记录无法再被信任。`}
+  $('#verifyBtn').classList.remove('disabled');
+};
+$('#tamperBtn').onclick=()=>{
+  let idx=-1;for(let k=audit.length-5;k>=0;k--){if(audit[k].type==='review'){idx=k;break}}if(idx<0)idx=Math.max(0,Math.floor(audit.length/2));
+  tamperIdx=idx;tamperOrig=audit[idx].detail;
+  audit[idx].detail=audit[idx].detail.includes('采纳')?audit[idx].detail.replace('采纳','驳回'):audit[idx].detail+'（已改）';
+  $('#verdict').className='verdict';renderAudit();
+  $('#tamperBtn').classList.add('disabled');$('#restoreBtn').classList.remove('disabled');
+  toast(`已直接修改第 ${idx+1} 条记录的内容（未经过系统）`);
+};
+$('#restoreBtn').onclick=()=>{audit[tamperIdx].detail=tamperOrig;tamperIdx=-1;$('#verdict').className='verdict';renderAudit();$('#tamperBtn').classList.remove('disabled');$('#restoreBtn').classList.add('disabled')};
+
+/* ---------- 架构 ---------- */
+let archStep=-1,altModel=false;
+function drawArch(){
+  const svg=$('#archSvg');
+  const model=altModel?'其他国产大模型（OpenAI 兼容接口）':'DeepSeek-V4.1-Flash-1017';
+  const box=(x,y,w,h,t,sub,fill,stroke,big)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="${big?2.5:1.5}"/><text x="${x+w/2}" y="${y+(sub?h/2-4:h/2+8)}" text-anchor="middle" font-size="${big?24:21}" font-weight="600" fill="#1f2933">${t}</text>${sub?`<text x="${x+w/2}" y="${y+h/2+24}" text-anchor="middle" font-size="16" fill="#5b6775">${sub}</text>`:''}`;
+  const arrow=(x1,y1,x2,y2,label)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#8796a8" stroke-width="2" marker-end="url(#ah)"/>${label?`<text x="${x1+12}" y="${(y1+y2)/2+6}" font-size="16" fill="#5b6775">${label}</text>`:''}`;
+  svg.innerHTML=`<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8796a8"/></marker></defs>
+  <rect x="10" y="10" width="1540" height="840" rx="16" fill="none" stroke="#9aa5b1" stroke-dasharray="8 6"/>
+  <text x="34" y="44" font-size="18" fill="#5b6775">校域内 / 政务云 · 本地化部署，数据不出域</text>
+  <g class="layer" data-l="0">${box(560,62,440,74,'办公室 · 各科室 · 领导','Web 界面，按角色登录','#fff','#8796a8')}</g>
+  <g class="layer" data-l="1"><rect x="60" y="170" width="1440" height="226" rx="12" fill="#f7f9fc" stroke="#8796a8" stroke-width="1.5"/><text x="84" y="204" font-size="21" font-weight="700" fill="#17324d">政务公文智核 · 智能体层</text>
+    ${box(84,222,320,66,'公文起草','',  '#fff','#b8c3d0')}${box(424,222,320,66,'公文校核','','#fff','#b8c3d0')}${box(764,222,320,66,'政策口径比对与解读','','#fff','#b8c3d0')}${box(1104,222,372,66,'会议纪要与长文摘要','','#fff','#b8c3d0')}
+    ${box(84,306,450,70,'规则引擎','管硬性格式：版式、字号、标点','#fdf3d8','#b7791f')}${box(552,306,450,70,'人工终审','AI 只出建议，人逐条采纳或驳回','#e2f4ea','#2f855a')}${box(1020,306,456,70,'权限过滤','按角色与密级过滤检索结果','#fde8e8','#c0262d')}</g>
+  <g class="layer" data-l="2">${box(60,450,620,120,'知识与规则库','GB/T 9704 规则库 · 文种模板库 · 政策知识库','#fff','#6b3fb3')}</g>
+  <g class="layer" data-l="3">${box(740,450,760,120,'黑匣子审计底座','模型调用代理 · 敏感信息脱敏 · 哈希链存证 · 成本计量','#e3eefa','#1d5fa8',true)}</g>
+  <g class="layer" data-l="4">${box(740,650,760,100,model,altModel?'只改代理的上游地址，业务代码不变':'MIT 开源权重，可本地部署 · 100 万 token 上下文','#fff','#17324d',true)}</g>
+  <g class="layer" data-l="0">${arrow(780,136,780,166)}</g>
+  <g class="layer" data-l="2">${arrow(370,396,370,446,'检索')}</g>
+  <g class="layer" data-l="3">${arrow(1120,396,1120,446,'模型调用 · 工具与审核事件')}</g>
+  <g class="layer" data-l="4">${arrow(1120,570,1120,646,'转发（已脱敏）')}</g>`;
+  applyArch();
+}
+function applyArch(){const svg=$('#archSvg');svg.classList.toggle('dim',archStep>=0);svg.querySelectorAll('.layer').forEach(g=>g.classList.toggle('lit',+g.dataset.l<=archStep))}
+$('#archNext').onclick=()=>{archStep=archStep>=4?0:archStep+1;applyArch()};
+$('#archAll').onclick=()=>{archStep=-1;applyArch()};
+$('#archSwap').onclick=()=>{altModel=!altModel;drawArch()};
+
+/* ---------- 起草 ---------- */
+document.querySelectorAll('.seg').forEach(s=>s.onclick=e=>{if(e.target.tagName==='SPAN'){s.querySelectorAll('span').forEach(x=>x.classList.remove('on'));e.target.classList.add('on')}});
+const DRAFT=`<p>为总结本学期期中教学检查工作，部署期末考试及相关教学工作，经学校研究，决定召开2026年秋季学期教学工作会议。现将有关事项通知如下：</p>
+<p class="h">一、会议时间</p><p>2026年11月10日（星期二）14:30。</p>
+<p class="h">二、会议地点</p><p>行政楼第一会议室。</p>
+<p class="h">三、参会人员</p><p>各学院院长、教学副院长，各部门主要负责人。</p>
+<p class="h">四、会议议程</p><p>（一）通报本学期期中教学检查情况；</p><p>（二）部署期末考试工作；</p><p>（三）学校领导讲话。</p>
+<p class="h">五、有关要求</p><p>请参会人员准时出席。确因特殊情况不能参会的，须指定专人代会，并于11月7日前报学校办公室备案。</p>`;
+$('#genBtn').onclick=async()=>{
+  $('#genBtn').classList.add('disabled');$('#draftTail').style.display='none';
+  await typeInto($('#draftBody'),DRAFT,12);
+  $('#draftTail').style.display='block';
+  addAudit('model_call','起草 ·《关于召开2026年秋季学期教学工作会议的通知》',2850,620);
+  $('#toProof').classList.remove('disabled');$('#genBtn').classList.remove('disabled');
+};
+$('#toProof').onclick=()=>go('proof');
+
+/* ---------- 校核 ---------- */
+const ISSUES={
+ 1:{src:'rule',kind:'格式',text:'(2026)',fix:'〔2026〕',why:'发文字号中的年份应使用六角括号“〔〕”括入（GB/T 9704—2012）。'},
+ 2:{src:'rule',kind:'标点',text:'。',fix:'',why:'公文标题末尾一般不使用标点符号。'},
+ 3:{src:'rule',kind:'标点',text:':',fix:'：',why:'主送机关后应使用全角冒号。'},
+ 4:{src:'rule',kind:'标点',text:',',fix:'，',why:'中文语句中误用了半角逗号。'},
+ 5:{src:'model',kind:'错别字',text:'既日起',fix:'即日起',why:'“即”表示当即、立刻；“即日起”指从当天起。'},
+ 6:{src:'kb',kind:'政策口径',text:'安全第一、预防为主',fix:'安全第一、预防为主、综合治理',why:'方针表述不完整。出处：《中华人民共和国安全生产法》第三条。'},
+ 7:{src:'model',kind:'错别字',text:'截至日期',fix:'截止日期',why:'“截止”指到期停止，“截止日期”为固定用法；“截至”后应接具体时间点。'},
+ 8:{src:'model',kind:'规范表述',text:'妥否，请批示。',fix:'',why:'“妥否，请批示”是请示的结束语，通知不应使用，建议删除。'},
+ 9:{src:'rule',kind:'格式',text:'',fix:'2026年11月3日',why:'缺少成文日期，应在发文机关署名下方标注。'}
+};
+const DOC=[
+ ['docno',['示院办',{i:1},'18号']],
+ ['title',['关于开展2026年秋季学期安全检查工作的通知',{i:2}]],
+ ['noindent',['各学院、各部门、各直属单位',{i:3}]],
+ ['',['为深入贯彻落实上级关于校园安全工作的部署要求，切实做好秋季学期安全防范工作',{i:4},'经学校研究，决定在全校范围内开展安全检查工作。现将有关事项通知如下：']],
+ ['h',['一、检查时间']],['',[{i:5},'至2026年11月20日。']],
+ ['h',['二、检查内容']],['',['（一）消防设施、用电安全及实验室危险化学品管理情况；']],['',['（二）学生宿舍违规电器使用及安全隐患排查情况；']],['',['（三）校园周边交通及大型活动安全保障情况。']],
+ ['h',['三、工作要求']],['',['（一）各单位要坚持',{i:6},'的方针，高度重视，认真组织自查自纠，对发现的问题立行立改。']],
+ ['',['（二）各单位于2026年11月25日前将自查报告报送学校办公室，',{i:7},'后不再受理。']],
+ ['',[{i:8}]],
+ ['sign',['示范学院办公室']],['date',[{i:9}]]
+];
+const state={};let shown=new Set(),sel=null;
+function renderDoc(){
+  const html=DOC.map(([cls,segs])=>{
+    const inner=segs.map(s=>{
+      if(typeof s==='string')return s;
+      const is=ISSUES[s.i],st=state[s.i];
+      if(st==='adopt')return is.fix?`<span class="fixed" data-f="${s.i}">${is.fix}</span>`:'';
+      if(!shown.has(s.i)||st==='reject')return is.text;
+      return `<mark class="${is.src}${is.text?'':' missing'}${sel===s.i?' focus':''}" data-i="${s.i}">${is.text||'［缺成文日期］'}</mark>`;
+    }).join('');
+    if(cls==='docno')return `<div class="redhead">示范学院办公室文件</div><div class="docno" style="margin-top:20px">${inner}</div><div class="redline"></div>`;
+    if(cls==='title')return `<div class="title">${inner}</div>`;
+    return inner?`<p class="${cls}">${inner}</p>`:'';
+  }).join('');
+  $('#proofPaper').innerHTML=html;
+  setTimeout(()=>document.querySelectorAll('#proofPaper .fixed').forEach(e=>e.classList.add('fade')),60);
+}
+function renderIssues(){
+  const ids=[...shown];
+  $('#ilist').innerHTML=ids.map(i=>{const is=ISSUES[i],st=state[i];const srcName={rule:'规则引擎',model:'大模型',kb:'知识库'}[is.src];
+    return `<div class="issue ${is.src}${st?' done':''}${sel===i?' sel':''}" data-i="${i}"><div class="top"><span>#${i} ${is.kind}<span class="tag ${is.src}">${srcName}</span></span></div>
+    <div class="chg">${is.text?`<del>${is.text}</del>`:'<del>（缺失）</del>'} → ${is.fix?`<ins>${is.fix}</ins>`:'<ins>删除</ins>'}</div><div class="why">${is.why}</div>
+    ${st?`<div class="res" style="color:${st==='adopt'?'var(--green)':'var(--quiet)'}">${st==='adopt'?'✓ 已采纳':'✗ 已驳回，保留原文'}</div>`:`<div class="act"><button class="btn small green" data-a="adopt">采纳</button><button class="btn small ghost" data-a="reject">驳回</button></div>`}</div>`}).join('');
+  const todo=ids.filter(i=>!state[i]).length;
+  $('#cTodo').textContent=shown.size?todo:'–';
+  $('#cAdopt').textContent=ids.filter(i=>state[i]==='adopt').length;
+  $('#cReject').textContent=ids.filter(i=>state[i]==='reject').length;
+  $('#finalBtn').classList.toggle('disabled',!(shown.size===9&&todo===0));
+}
+$('#ilist').onclick=e=>{
+  const card=e.target.closest('.issue');if(!card)return;const i=+card.dataset.i;const a=e.target.dataset.a;
+  if(a){state[i]=a;sel=null;addAudit('review',`校核 · #${i} “${ISSUES[i].text||'缺成文日期'}” ${a==='adopt'?'采纳':'驳回'}`)}else sel=i;
+  renderDoc();renderIssues();
+  const m=document.querySelector(`#proofPaper mark[data-i="${i}"]`);if(m)m.scrollIntoView({block:'center',behavior:'smooth'});
+};
+$('#proofPaper').onclick=e=>{const m=e.target.closest('mark');if(!m)return;sel=+m.dataset.i;renderDoc();renderIssues();const c=document.querySelector(`.issue[data-i="${sel}"]`);c&&c.scrollIntoView({block:'center',behavior:'smooth'})};
+$('#proofBtn').onclick=async()=>{
+  $('#proofBtn').classList.add('disabled');shown=new Set();for(const k in state)delete state[k];sel=null;renderDoc();renderIssues();
+  const p=$('#proofProg');
+  p.textContent='规则引擎检查版式、标点、格式…';await sleep(900);[1,2,3,4,9].forEach(i=>shown.add(i));renderDoc();renderIssues();
+  p.textContent='大模型校核错别字、语病与文种表述…';await sleep(1500);[5,7,8].forEach(i=>shown.add(i));renderDoc();renderIssues();
+  addAudit('model_call','校核 ·《关于开展2026年秋季学期安全检查工作的通知》',3400,410);
+  p.textContent='知识库比对政策口径…';await sleep(1100);shown.add(6);
+  shown=new Set([...shown].sort((a,b)=>a-b));renderDoc();renderIssues();
+  addAudit('kb_search','口径比对 · 检索《安全生产法》《校园安全管理办法》',2100,180);
+  p.textContent='校核完成：规则 5 处 · 大模型 3 处 · 知识库 1 处';$('#proofBtn').classList.remove('disabled');
+};
+$('#finalBtn').onclick=()=>{addAudit('export','定稿 ·《关于开展2026年秋季学期安全检查工作的通知》导出 Word');$('#proofProg').textContent='已定稿并导出 Word（演示）'};
+renderDoc();renderIssues();
+
+/* ---------- 口径比对 ---------- */
+const CMP=[
+ {ok:false,doc:'各单位要坚持<span class="diff">安全第一、预防为主</span>的方针',src:'《中华人民共和国安全生产法》第三条',body:'安全生产工作坚持中国共产党的领导。安全生产工作应当以人为本，坚持人民至上、生命至上，把保护人民生命安全摆在首位，树牢安全发展理念，<span class="hl">坚持安全第一、预防为主、<span class="diff">综合治理</span>的方针</span>，从源头上防范化解重大安全风险。',verdict:'公文缺少“综合治理”，与现行法律表述不一致。建议改为“安全第一、预防为主、综合治理”。'},
+ {ok:true,doc:'各单位于2026年11月25日前将自查报告报送学校办公室',src:'《示范学院校园安全管理办法》第十二条（虚构，演示用）',body:'各单位应在安全检查结束后<span class="hl">5个工作日内向学校办公室报送自查报告</span>，报告应包括检查范围、发现的问题及整改情况。',verdict:'检查于11月20日（星期五）结束，5个工作日内为11月27日前；公文要求11月25日前报送，符合规定。'},
+ {ok:true,doc:'学生宿舍违规电器使用及安全隐患排查情况',src:'《示范学院学生宿舍管理规定》第八条（虚构，演示用）',body:'学生宿舍内<span class="hl">禁止使用大功率电器及其他违规电器</span>，学生工作部门应会同后勤部门定期开展检查。',verdict:'表述与规定一致。'}
+];
+let cmpSel=0;
+function renderCmp(){
+  $('#cmpList').innerHTML=CMP.map((c,i)=>`<div class="cmpitem${i===cmpSel?' sel':''}" data-i="${i}"><span class="st ${c.ok?'ok':'bad'}">${c.ok?'一致':'不一致'}</span><div style="font-size:14px;color:var(--quiet)">公文原句</div><div class="src" style="font-size:19px">${c.doc}</div><div style="font-size:14px;color:var(--accent);margin-top:6px">出处：${c.src}</div></div>`).join('');
+  const c=CMP[cmpSel];
+  $('#cmpSrc').innerHTML=`<div style="font-size:15px;color:var(--quiet)">政策原文 · ${c.src}</div><div class="src" style="margin:14px 0 22px">${c.body}</div><div style="font-size:17px;padding:12px 16px;border-radius:8px;background:${c.ok?'var(--green-soft)':'var(--red-soft)'};color:${c.ok?'var(--green)':'var(--red)'}">${c.ok?'✓':'✗'} ${c.verdict}</div>`;
+}
+$('#cmpList').onclick=e=>{const it=e.target.closest('.cmpitem');if(it){cmpSel=+it.dataset.i;renderCmp()}};
+renderCmp();
+$('#polTabs').onclick=e=>{const t=e.target.dataset.t;if(!t)return;$('#polTabs').querySelectorAll('span').forEach(s=>s.classList.toggle('on',s.dataset.t===t));$('#polCmp').style.display=t==='cmp'?'flex':'none';$('#polQa').style.display=t==='qa'?'flex':'none'};
+const QA_SRC={
+ a:['《示范学院校园安全管理办法》第十二条（虚构）','各单位应在安全检查结束后<span class="hl">5个工作日内向学校办公室报送自查报告</span>，报告应包括检查范围、发现的问题及整改情况。'],
+ b:['《示范学院校园安全管理办法》第十三条（虚构）','对检查发现的安全隐患，责任单位应当<span class="hl">立即整改；不能立即整改的，应当制定整改方案，明确责任人、整改措施和完成时限</span>，并报学校办公室备案。'],
+ c:['《中华人民共和国安全生产法》第三条','……树牢安全发展理念，<span class="hl">坚持安全第一、预防为主、综合治理的方针</span>，从源头上防范化解重大安全风险。']
+};
+$('#qaBtn').onclick=async()=>{
+  $('#qaA').innerHTML='';$('#qaNote').style.display='none';
+  const f=$('#qaRetr');f.style.display='block';f.innerHTML='知识库检索中…';await sleep(700);
+  f.innerHTML='检索到 5 条相关条款，按相关度保留 3 条：<span class="doc-chip">校园安全管理办法 第十二条</span><span class="doc-chip">校园安全管理办法 第十三条</span><span class="doc-chip">安全生产法 第三条</span><span class="doc-chip cut">后勤管理制度 第四条</span><span class="doc-chip cut">学生手册 第二十条</span>';
+  addAudit('kb_search','政策问答 · 检索“安全检查 自查报告 整改”',0,0);
+  await typeInto($('#qaA'),`<p>1. 自查报告应在检查结束后 5 个工作日内报送学校办公室。<span class="cite" data-c="a">管理办法 第十二条</span></p><p>2. 发现的隐患应立即整改；不能立即整改的，要制定整改方案，明确责任人、措施和完成时限，并报办公室备案。<span class="cite" data-c="b">管理办法 第十三条</span></p><p>3. 安全工作坚持安全第一、预防为主、综合治理的方针。<span class="cite" data-c="c">安全生产法 第三条</span></p>`,16);
+  addAudit('model_call','政策问答 ·“自查报告什么时候交？发现问题怎么处理？”',4200,360);
+  $('#qaNote').style.display='block';
+};
+$('#qaA').onclick=e=>{const c=e.target.dataset.c;if(!c)return;const [t,b]=QA_SRC[c];$('#qaSrc').innerHTML=`<div style="font-size:15px;color:var(--quiet)">${t}</div><div class="src" style="margin-top:14px">${b}</div>`};
+
+/* ---------- 纪要 ---------- */
+$('#rawNotes').textContent=`11.3 下午 校长办公会 行政楼302
+到会：刘校长 陈副校长 周副校长
+列席：办公室 教务处 学工处 后勤处 财务处
+
+1 秋季安全检查
+刘：这个要抓紧
+周：后勤这边宿舍电器问题比较多，下周一开始查，学工处配合
+刘：20号前查完，报告25号前交办公室
+
+2 期末考试
+陈：考务安排教务处牵头，监考培训放12月第一周，试卷印刷保密要加强
+
+3 食堂价格
+后勤说成本涨了想调
+刘：先不调，做个调研再说，后勤处负责，月底前给方案
+
+4 其他
+财务处提醒：年底报销截止12月20号`;
+const MIN=`<h3>一、会议基本情况</h3><p>时间：2026年11月3日下午　地点：行政楼302会议室</p><p>主持：<span class="tbd">待确认</span>　出席：刘校长、陈副校长、周副校长</p><p>列席：学校办公室、教务处、学工处、后勤处、财务处负责人</p>
+<h3>二、议定事项</h3><p>（一）关于秋季学期安全检查。会议决定自11月9日起开展全校安全检查，11月20日前完成，11月25日前将检查报告报送学校办公室。由后勤处负责，学工处配合。</p><p>（二）关于期末考试工作。由教务处牵头做好考务安排，12月第一周完成监考培训，加强试卷印刷保密管理。</p><p>（三）关于食堂价格调整。会议决定暂不调整，由后勤处开展调研，11月30日前提出方案。</p><p>（四）其他事项。财务处提示，年度报销截止日期为12月20日。</p>
+<h3>三、任务分工</h3><table class="t"><tr><th>任务</th><th>责任单位</th><th>时限</th></tr><tr><td>全校安全检查</td><td>后勤处（学工处配合）</td><td>11月20日前完成</td></tr><tr><td>报送检查报告</td><td>后勤处</td><td>11月25日前</td></tr><tr><td>考务安排与监考培训</td><td>教务处</td><td>12月第一周（具体日期 <span class="tbd">待确认</span>）</td></tr><tr><td>食堂价格调研方案</td><td>后勤处</td><td>11月30日前</td></tr></table>
+<p class="note" style="font-family:sans-serif;margin-top:12px">“主持人”和“监考培训具体日期”在速记中没有写明，标为待确认，不由模型推测。</p>`;
+$('#minBtn').onclick=async()=>{$('#minBtn').classList.add('disabled');await typeInto($('#minOut'),MIN,8);addAudit('model_call','会议纪要 · 校长办公会（11月3日）',1600,540);$('#minBtn').classList.remove('disabled')};
+
+/* ---------- 脱敏 ---------- */
+const ORIG=`关于学生<span class="s-name" data-k="人名1">张小明</span>（身份证号 <span class="s-id" data-k="身份证号1">330106200501011234</span>，手机 <span class="s-phone" data-k="手机号1">13800138000</span>）宿舍违规用电的情况说明：经学工处<span class="s-name" data-k="人名2">王建国</span>老师（电话 <span class="s-tel" data-k="电话1">0571-88881234</span>）核实，该生住址为<span class="s-addr" data-k="地址1">西湖区文三路100号</span>，宿舍内使用大功率电器一件，已当场收缴。请提出处理意见。`;
+$('#rdOrig').innerHTML=ORIG;
+function phHtml(){const d=document.createElement('div');d.innerHTML=ORIG;d.querySelectorAll('span[data-k]').forEach(s=>{s.outerHTML=`<span class="ph">【${s.dataset.k}】</span>`});return d.innerHTML}
+const MODEL_OUT=`处理意见：【人名1】在宿舍使用大功率电器，违反《学生宿舍管理规定》第八条。建议由学工处【人名2】老师对其进行约谈教育，通报所在学院，并在一周内复查宿舍用电情况。`;
+$('#rd1').onclick=()=>{$('#rdOrig').classList.add('on-detect');$('#rd2').classList.remove('disabled');addAudit('redact','脱敏 · 识别 6 处敏感信息（人名 2、身份证号 1、手机号 1、电话 1、地址 1）')};
+$('#rd2').onclick=async()=>{await typeInto($('#rdModel'),phHtml(),10);$('#rd3').classList.remove('disabled')};
+$('#rd3').onclick=async()=>{
+  const out=document.createElement('div');out.style.marginTop='16px';out.style.paddingTop='14px';out.style.borderTop='1px dashed var(--line)';$('#rdModel').appendChild(out);
+  await typeInto(out,MODEL_OUT.replace(/【(.+?)】/g,'<span class="ph">【$1】</span>'),14);
+  addAudit('model_call','学工处理意见 · 输入已脱敏',900,120);
+  const ids=[['身份证号','330106200501011234'],['手机号','13800138000'],['电话','0571-88881234']];
+  const plain=ORIG.replace(/<[^>]+>/g,'');
+  let red=plain;ids.forEach(([k,v])=>{red=red.replace(v,`<span class="r">[REDACTED:${k}:${sha256(v).slice(0,8)}]</span>`)});
+  red=red.replace('张小明','<span class="r">[REDACTED:人名:'+sha256('张小明').slice(0,8)+']</span>').replace('王建国','<span class="r">[REDACTED:人名:'+sha256('王建国').slice(0,8)+']</span>').replace('西湖区文三路100号','<span class="r">[REDACTED:地址:'+sha256('西湖区文三路100号').slice(0,8)+']</span>');
+  $('#rdLog').innerHTML=`{"seq": ${audit.length}, "type": "model_call", "scene": "学工处理意见", "content": "${red}"}`;
+  $('#rd4').classList.remove('disabled');
+};
+$('#rd4').onclick=async()=>{const d=document.createElement('div');d.innerHTML=ORIG;const map={};d.querySelectorAll('span[data-k]').forEach(s=>map[s.dataset.k]=s.textContent);
+  await typeInto($('#rdOut'),MODEL_OUT.replace(/【(.+?)】/g,(m,k)=>`<b>${map[k]}</b>`),14)};
+
+/* ---------- 权限 ---------- */
+$('#acBtn').onclick=async()=>{
+  $('#aA').innerHTML='';$('#aB').innerHTML='';
+  $('#fA').style.display=$('#fB').style.display='block';$('#fA').textContent=$('#fB').textContent='检索中…';await sleep(700);
+  $('#fA').innerHTML='检索到 3 份 → 按权限过滤后剩 1 份：<span class="doc-chip">2026年度部门预算公开说明（公开）</span><span class="doc-chip cut">2027年度预算调整方案（内部）</span><span class="doc-chip cut">财务处预算编制工作底稿（内部）</span>';
+  $('#fB').innerHTML='检索到 3 份 → 按权限过滤后剩 3 份：<span class="doc-chip">2027年度预算调整方案（内部）</span><span class="doc-chip">财务处预算编制工作底稿（内部）</span><span class="doc-chip">2026年度部门预算公开说明（公开）</span>';
+  addAudit('kb_search','权限检索 · 李老师：3 份中 2 份因密级被过滤',0,0,{user:USERS[1],silent:true});
+  addAudit('kb_search','权限检索 · 赵主任：3 份全部可用',0,0,{user:USERS[2],silent:true});
+  await Promise.all([
+    typeInto($('#aA'),'在您有权访问的文件中，没有检索到“2027 年度预算调整方案”的内容。<br>可参考公开文件《2026年度部门预算公开说明》<span class="cite">公开</span>。如需查阅该方案，请向学校办公室申请。',18),
+    typeInto($('#aB'),'根据《2027年度预算调整方案》<span class="cite">内部 · 第二部分</span>，主要变化有三项：<br>（一）压减一般性支出，严控会议费、差旅费；<br>（二）向实验室安全改造倾斜；<br>（三）新增智慧校园建设专项。<br><span class="note">（文件与内容均为虚构）</span>',18)
+  ]);
+  addAudit('model_call','权限问答 · 李老师（输入仅含公开文件）',1900,110,{user:USERS[1],silent:true});
+  addAudit('model_call','权限问答 · 赵主任（输入含内部文件）',3100,260,{user:USERS[2]});
+};
+$('#acOpen').onclick=()=>{$('#denyA').classList.add('on');addAudit('access_denied','越权拦截 · 李老师尝试打开《2027年度预算调整方案》（内部）',0,0,{user:USERS[1]})};
+$('#denyClose').onclick=()=>$('#denyA').classList.remove('on');
+
+/* ---------- 评测 ---------- */
+function renderMetrics(){
+  $('#metKpis').innerHTML=`<div class="kpi"><span>本月校核公文</span><b>128 篇</b><small>示例值</small></div><div class="kpi"><span>AI 提示问题</span><b>1,046 条</b><small>示例值</small></div><div class="kpi"><span>总体采纳率</span><b>86%</b><small>示例值</small></div><div class="kpi"><span>单篇平均耗时（AI 初筛 + 人工终审）</span><b>6.5 分钟</b><small>示例值 · 人工基线待实测</small></div><div class="kpi"><span>单篇平均模型成本</span><b>¥0.012</b><small>示例值</small></div>`;
+  const T=[['格式（规则）',97],['标点（规则）',94],['错别字（模型）',88],['规范表述（模型）',76],['政策口径（知识库）',71]];
+  const D=[['学校办公室',0.62],['教务处',0.41],['学工处',0.33],['后勤处',0.19],['财务处',0.15]];
+  $('#barsType').innerHTML=T.map(([n,v])=>`<div class="bar"><span>${n}</span><div class="track"><div class="fill" data-w="${v}"></div></div><b>${v}%</b></div>`).join('');
+  $('#barsDept').innerHTML=D.map(([n,v])=>`<div class="bar"><span>${n}</span><div class="track"><div class="fill" style="background:#2f855a" data-w="${v/0.62*100}"></div></div><b>¥${v.toFixed(2)}</b></div>`).join('');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('#p-metrics .fill').forEach(f=>f.style.width=f.dataset.w+'%')));
+  const calls=audit.filter(r=>r.type==='model_call');const tin=calls.reduce((a,r)=>a+r.tin,0),tout=calls.reduce((a,r)=>a+r.tout,0);
+  const rv=audit.filter(r=>r.type==='review');const ad=rv.filter(r=>r.detail.includes('采纳')).length;
+  $('#liveStat').innerHTML=`<b>本次演示实时数据（来自审计链）</b>　模型调用 ${calls.length} 次 · token ${tin.toLocaleString()} / ${tout.toLocaleString()} · 成本 ${yuan(cost(tin,tout))} · 人工审核 ${rv.length} 条，其中采纳 ${ad} 条`;
+}
+
+/* ---------- init ---------- */
+buildNav();drawArch();go('arch');
+</script>
+</body>
+</html>
